@@ -315,9 +315,13 @@ var _encryPlayer2 = _interopRequireDefault(_encryPlayer);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+function createEncryptedPlayer(media_info, video_element) {
+    return new _encryPlayer2.default(media_info, video_element);
+}
+
 // interfaces
 var elpjs = {
-    getPlayer: new _encryPlayer2.default(345, 345) //for test
+    createEncryptedPlayer: createEncryptedPlayer
 };
 
 Object.defineProperty(elpjs, 'version', {
@@ -339,7 +343,8 @@ Object.defineProperty(exports, "__esModule", {
 
 var PlayerEvents = {
     PARSE_MPD_FINISHED: 'mpd_finished',
-    WEBSOCKET_READY: 'websocket_ready'
+    WEBSOCKET_READY: 'websocket_ready',
+    CONNECTION_LOST: 'connection_lost'
 };
 
 exports.default = PlayerEvents;
@@ -423,10 +428,12 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 var EncryPlayer = function () {
     function EncryPlayer(media_info, video_element) {
+        var _this = this;
+
         _classCallCheck(this, EncryPlayer);
 
-        this.media_info = media_info;
-        this.video_element = video_element;
+        this._media_info = media_info;
+        this._video_element = video_element;
 
         this.current_video_track = 0;
         this.current_audio_track = 0;
@@ -434,11 +441,23 @@ var EncryPlayer = function () {
         this.segments_video = [];
         this.segments_audio = [];
 
-        this._mediaInfoLoaded = false;
-        this._initLoaded = false;
-
         this._emitter = new _events2.default();
         this._orderQueue = [];
+
+        this._video = media_info.video;
+        this._audio = media_info.audio;
+
+        this._ws = new WebSocket(media_info.address);
+        this._ms = new MediaSource();
+        this._video_element.src = URL.createObjectURL(this._ms);
+        this._video_element.width = this._video.width;
+        this._video_element.height = this._video.height;
+
+        this._ms.addEventListener('sourceopen', function (e) {
+            _this.sb_video = _this._ms.addSourceBuffer(_this._video.mimeType + ";  codecs=\"" + _this._video.codecs);
+            _this.sb_audio = _this._ms.addSourceBuffer(_this._audio.mimeType + ";  codecs=\"" + _this._audio.codecs);
+            console.log('Everything is ok till now.');
+        });
     }
 
     _createClass(EncryPlayer, [{

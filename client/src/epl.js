@@ -1,9 +1,13 @@
 
 import EncryPlayer from './player/encry-player.js';
 
+function createEncryptedPlayer(media_info, video_element) {
+    return new EncryPlayer(media_info, video_element);
+}
+
 // interfaces
 let elpjs = {
-    getPlayer: new EncryPlayer(345, 345) //for test
+    createEncryptedPlayer: createEncryptedPlayer
 };
 
 Object.defineProperty(elpjs, 'version', {
