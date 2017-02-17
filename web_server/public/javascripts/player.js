@@ -1,118 +1,162 @@
-(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-'use strict';
 
-exports.__esModule = true;
+function parseRangeString(range_str) {
+    var range_strs = range_str.split('-');
+    return new Segment(Number.parseInt(range_strs[0]), Number.parseInt(range_strs[1]), Segment.UNLOADED);
+}
 
-var PlayerEvents = {
+const PlayerEvents = {
     PARSE_MPD_FINISHED: 'mpd_finished',
     WEBSOCKET_READY: 'websocket_ready'
 };
 
-exports['default'] = PlayerEvents;
-module.exports = exports['default'];
-
-},{}],2:[function(require,module,exports){
-
-// import {sum, square, variable, MyClass} from './import';
-// // 25
-// console.log(square(6));
-
-// var cred = {
-//     name: 'Ritesh Kumar',
-//     enrollmentNo: 11115078
-// }
-
-// var x = new MyClass(cred);
-
-// //Ritesh Kumar
-// console.log(x.getName());
-
-'use strict';
-
-exports.__esModule = true;
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
-var _playerJs = require('./player.js');
-
-var _playerJs2 = _interopRequireDefault(_playerJs);
-
-exports['default'] = _playerJs2['default'];
-module.exports = exports['default'];
-
-},{"./player.js":3}],3:[function(require,module,exports){
-'use strict';
-
-exports.__esModule = true;
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
-
-var _segmentJs = require('./segment.js');
-
-var _segmentJs2 = _interopRequireDefault(_segmentJs);
-
-var _eventsPlayerEventsJs = require('./events/player-events.js');
-
-var _eventsPlayerEventsJs2 = _interopRequireDefault(_eventsPlayerEventsJs);
-
-var Player = function Player(media_info, video_element) {
-    _classCallCheck(this, Player);
-
-    this.media_info = media_info;
-    this.video_element = video_element;
-
-    this.current_video_track = 0;
-    this.current_audio_track = [0, 0];
-
-    this.segments_video = [];
-    this.segments_audio = [];
+const WSRequestType = {
+    SEGMENT_CONTENT: 1
 };
 
-exports['default'] = Player;
-module.exports = exports['default'];
+class Player {
+    constructor(mpd_url, video_url, video_element) {
+        this.mpd_url = mpd_url;
+        this.video_url = video_url;
+        this.video_element = video_element;
 
-},{"./events/player-events.js":1,"./segment.js":4}],4:[function(require,module,exports){
-'use strict';
+        this._dashLoaded = false;
+        this._initialInfoLoaded = false;
+        this._emitter = new EventEmitter();
+        this._orderQueue = [];
 
-exports.__esModule = true;
+        this._readMPD(this);
+        this.on(PlayerEvents.PARSE_MPD_FINISHED, this._setupVideo);
+        this.on(PlayerEvents.WEBSOCKET_READY, this._flushOrderQueue);
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+        //this.type
+        //this.codecs
+        //this.width
+        //this.height
+        //this.bandwidth
+        //this.initialization
+        //this.segments
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+        //this.mediaSource
+        //this.sourceBuffer
+    }
 
-var _statusSegmentStatusJs = require('./status/segment-status.js');
+    on(event, listener) {
+        this._emitter.addListener(event, listener);
+    }
 
-var _statusSegmentStatusJs2 = _interopRequireDefault(_statusSegmentStatusJs);
+    off(event, listener) {
+        this._emitter.removeListener(event, listener);
+    }
 
-var Segment = function Segment(id, start, end, status) {
-    _classCallCheck(this, Segment);
+    _wsSend(_self, request) {
+        if (_self.ws.readyState == WebSocket.OPEN)
+            _self.ws.send(JSON.stringify(request));
+        else
+            _self._orderQueue.push(JSON.stringify(request));
+    }
 
-    this.id = id;
-    this.start = start;
-    this.end = end;
-    this.status = _statusSegmentStatusJs2['default'].UNLOADED;
+    _flushOrderQueue(_self) {
+        console.log('Hi~~');
+        var queue = _self._orderQueue;
+        while (queue.length > 0) {
+            var msg = queue.shift();
+            _self.ws.send(msg);
+        }
+    }
+
+    _readMPD(_self) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', this.mpd_url, true);
+        xhr.responseType = "text";
+        xhr.send();
+
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === xhr.DONE) {
+                var tempoutput = xhr.response;
+                var parser = new DOMParser();
+                var data = parser.parseFromString(tempoutput, "text/xml", 0);
+                var rep = data.querySelectorAll("Representation");
+                _self.type = rep[0].getAttribute("mimeType");
+                _self.codecs = rep[0].getAttribute("codecs");
+                _self.width = rep[0].getAttribute("width");
+                _self.height = rep[0].getAttribute("height");
+                _self.bandwidth = rep[0].getAttribute("bandwidth");
+                var ini = data.querySelectorAll("Initialization");
+                _self.initialization = parseRangeString(ini[0].getAttribute("range").toString());
+                var segmentsRawData = data.querySelectorAll("SegmentURL");
+                _self.segments = [];
+                for (var i = 0; i < segmentsRawData.length; ++i) {
+                    var segment_raw = segmentsRawData[i];
+                    _self.segments.push(parseRangeString(segment_raw.getAttribute("mediaRange").toString()));
+                }
+                _self._dashLoaded = true;
+                _self._emitter.emitEvent(PlayerEvents.PARSE_MPD_FINISHED, [_self]);
+
+            }
+        };
+    }
+
+    _videoDataParser(_self, data) {
+        // _self.sourceBuffer.addEventListener('updateend', function (_) {
+        //     _self.video_element.play();
+        // });
+        console.log(_self.video_element.error);
+        _self.sourceBuffer.appendBuffer(data);
+    }
+
+    _setupVideo(_self) {
+        _self.mediaSource = new MediaSource();
+        var url = URL.createObjectURL(_self.mediaSource);
+        _self.video_element.src = url;
+        _self.video_element.width = _self.width;
+        _self.video_element.height = _self.height;
+
+        _self.mediaSource.addEventListener('sourceopen', e => {
+            _self.sourceBuffer = _self.mediaSource.addSourceBuffer(_self.type + ";  codecs=\"" + _self.codecs + "\"");
+            _self._initVideo(_self);
+        });
+    }
+
+    _requestSegment(_self, segment) {
+        //initialize websocket
+        if (_self.ws === undefined) {
+            _self.ws = new WebSocket(_self.video_url);
+            _self.ws.binaryType = "arraybuffer";
+            _self.ws.onopen = function () {
+                _self._emitter.emitEvent(PlayerEvents.WEBSOCKET_READY, [_self])
+            };
+            _self.ws.onmessage = function (e) {
+                _self._videoDataParser(_self, e.data);
+            };
+            _self.ws.onerror = function (e) {
+                //TODO
+            };
+        }
+        var request = {
+            type: WSRequestType.SEGMENT_CONTENT,
+            // content: [0, 11193280]
+            content: [segment.start, segment.end]
+        }
+        _self._wsSend(_self, request);
+    }
+
+    _initVideo(_self) {
+        _self._requestSegment(_self, _self.initialization);
+        // for(var i in _self.segments) {
+        //     _self._requestSegment(_self, _self.segments[i]);
+        // }
+        _self._requestSegment(_self, _self.segments[0]);
+        _self._requestSegment(_self, _self.segments[1]);
+        _self._requestSegment(_self, _self.segments[2]);
+    }
+}
+
+
+var video = document.querySelector('video');
+var dash_url = '../static/video_dash.mpd';
+var player = new Player(dash_url, "ws://localhost:8181", video);
+var button = document.querySelector('button');
+button.onclick = function(start, end) {
+    video.play();
 };
 
-exports['default'] = Segment;
-module.exports = exports['default'];
-
-},{"./status/segment-status.js":5}],5:[function(require,module,exports){
-"use strict";
-
-exports.__esModule = true;
-
-var SegmentStatus = {
-    UNLOADED: 0,
-    LOADING: 1,
-    DECODING: 2,
-    LOADED: 3,
-    CLEARING: 4,
-    CLEARED: 5
-};
-
-exports["default"] = SegmentStatus;
-module.exports = exports["default"];
-
-},{}]},{},[2]);

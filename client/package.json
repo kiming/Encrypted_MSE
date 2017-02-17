@@ -1,10 +1,34 @@
 {
-    "name": "player-client",
-    "main": "dist/module.js",
-    "devDependencies": {
-        "grunt": "^0.4.5",
-        "babelify": "^6.1.0",
-        "grunt-browserify": "^3.8.0",
-        "grunt-contrib-watch": "^0.6.1"
-    }
+  "name": "epljs",
+  "version": "0.0.1",
+  "description": "Encrypted MSE Player",
+  "main": "./dist/encry-player.js",
+  "scripts": {
+    "dev": "gulp watch",
+    "build": "gulp release",
+    "serve": "http-server -p 8000 ."
+  },
+  "dependencies": {
+    "es6-promise": "^4.0.5",
+    "webworkify": "^1.4.0"
+  },
+  "devDependencies": {
+    "babel-preset-es2015": "^6.18.0",
+    "babelify": "^7.3.0",
+    "browserify": "^13.1.1",
+    "browserify-derequire": "^0.9.4",
+    "browserify-versionify": "^1.0.6",
+    "del": "^2.2.0",
+    "gulp": "^3.9.1",
+    "gulp-cli": "^1.2.2",
+    "gulp-eslint": "^3.0.1",
+    "gulp-header": "^1.8.8",
+    "gulp-rename": "^1.2.2",
+    "gulp-sourcemaps": "^2.2.0",
+    "gulp-uglify": "^2.0.0",
+    "http-server": "^0.9.0",
+    "vinyl-buffer": "^1.0.0",
+    "vinyl-source-stream": "^1.1.0",
+    "watchify": "^3.7.0"
+  }
 }

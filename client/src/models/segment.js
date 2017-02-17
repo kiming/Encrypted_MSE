@@ -1,5 +1,5 @@
 
-import SegmentStatus from './status/segment-status.js';
+import SegmentStatus from './segment-status.js';
 
 class Segment {
     constructor(id, start, end, status) {
