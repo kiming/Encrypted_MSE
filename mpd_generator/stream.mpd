@@ -1,0 +1,36 @@
+<?xml version="1.0" ?>
+<MPD mediaPresentationDuration="PT1M0.095S" minBufferTime="PT10.13S" profiles="urn:mpeg:dash:profile:isoff-live:2011" type="static" xmlns="urn:mpeg:dash:schema:mpd:2011">
+  <!-- Created with Bento4 mp4-dash.py, VERSION=1.7.0-614 -->
+  <Period>
+    <!-- Video -->
+    <AdaptationSet maxHeight="360" maxWidth="640" mimeType="video/mp4" minHeight="360" minWidth="640" segmentAlignment="true" startWithSAP="1">
+      <Representation bandwidth="530615" codecs="avc1.42E01E" frameRate="288000/12019" height="360" id="video-avc1" scanType="progressive" width="640">
+        <SegmentList duration="10000" timescale="1000">
+          <Initialization range="28-1906" sourceURL="tf.mp4"/>
+          <SegmentURL media="tf.mp4" mediaRange="1907-684221"/>
+          <SegmentURL media="tf.mp4" mediaRange="850786-1564163"/>
+          <SegmentURL media="tf.mp4" mediaRange="1685623-2368997"/>
+          <SegmentURL media="tf.mp4" mediaRange="2524542-3199021"/>
+          <SegmentURL media="tf.mp4" mediaRange="3354877-4339768"/>
+          <SegmentURL media="tf.mp4" mediaRange="4502330-5374634"/>
+        </SegmentList>
+      </Representation>
+    </AdaptationSet>
+    <!-- Audio -->
+    <AdaptationSet lang="en" mimeType="audio/mp4" segmentAlignment="true" startWithSAP="1">
+      <Representation audioSamplingRate="22050" bandwidth="73214" codecs="mp4a.40.2" id="audio-en-mp4a">
+        <AudioChannelConfiguration schemeIdUri="urn:mpeg:dash:23003:3:audio_channel_configuration:2011" value="2"/>
+        <SegmentList duration="10000" timescale="1000">
+          <Initialization range="28-1906" sourceURL="tf.mp4"/>
+          <SegmentURL media="tf.mp4" mediaRange="684222-781973"/>
+          <SegmentURL media="tf.mp4" mediaRange="1564164-1628674"/>
+          <SegmentURL media="tf.mp4" mediaRange="2368998-2453889"/>
+          <SegmentURL media="tf.mp4" mediaRange="3199022-3286876"/>
+          <SegmentURL media="tf.mp4" mediaRange="4339769-4428025"/>
+          <SegmentURL media="tf.mp4" mediaRange="5374635-5451489"/>
+          <SegmentURL media="tf.mp4" mediaRange="5516498-5516608"/>
+        </SegmentList>
+      </Representation>
+    </AdaptationSet>
+  </Period>
+</MPD>
